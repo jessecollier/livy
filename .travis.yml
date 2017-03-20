@@ -1,31 +1,17 @@
 sudo: required
 dist: trusty
 language: scala
-
-env:
-  - MVN_FLAG='-Pspark-1.6 -DskipTests'
-  - MVN_FLAG='-Pspark-2.0 -DskipTests'
-  - MVN_FLAG='-Pspark-2.1 -DskipTests'
-  - MVN_FLAG='-Pspark-1.6 -DskipITs'
-  - MVN_FLAG='-Pspark-2.0 -DskipITs'
-  - MVN_FLAG='-Pspark-2.1 -DskipITs'
-
 jdk:
   - oraclejdk7
-
 addons:
   apt:
-    sources:
-      r-packages-trusty
-    packages:
-      r-base
-
+    sources: r-packages-trusty
+    packages: r-base
 cache:
   pip: true
   directories:
-    - $HOME/.m2
-    - $(npm config get prefix)
-
+    - "$HOME/.m2"
+    - "$(npm config get prefix)"
 before_install:
   - sudo apt-get -y install python3-pip python-dev
   - sudo apt-get -y install libkrb5-dev
@@ -34,20 +20,18 @@ before_install:
   - pip3 install --user --upgrade pip setuptools
   - pip install --user codecov cloudpickle
   - pip3 install --user cloudpickle
-
-install:
-  - mvn $MVN_FLAG install -Dskip -DskipTests -DskipITs -Dmaven.javadoc.skip=true -B -V
-
 before_script:
   - pip install --user requests pytest flaky flake8 requests-kerberos
   - pip3 install --user requests pytest flaky requests-kerberos
-
+install:
+  - mvn  package -DskipTests -DskipITs -Pspark-2.1 --quiet 
 script:
   - mvn $MVN_FLAG verify -e
 
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
-
-after_failure:
-  - npm list -g azure-cli --depth=0 || npm install -g azure-cli
-  - ./dev/travis-upload-logs.sh
+deploy:
+  provider: releases
+  api_key:
+    secure: qpNnmwRkhT9c7xmi5jzWsccSBJJ17as5HotruDoujylbIT/+zWtejNVuWgnuHkJyAWuN8A4mmyB7iLx557+nLAjreRQO/5NIfQGlOI1WQT74BwUOetHcENXGSDNz/7XeUH/KbvSCrr8gQlajmhXhP38BMj8f2SMVJ56kYrqvJKgg6qSVv9ofpZJR6gjLhCuDR+pHN5hYDHwmejNsr2MKTXM/ttFcwBL+3LXE1vSbXAku4NWYtuLxgqO8HeEHAydwICUTZhWiCYDN9KPpe+nK5etUR/PLD6GVwysyVed+OFctQcqf+qx++DGUTIIeQDgRnwLa70dXwwk3f428AxcJ4CMPi237ffT6r9NP/6CaCIs7rUyBXQOLhcJ8qTo38ZTXkaAVKkztl5Iyw7zr6zUSOuLChWRLzg2Ay6RUMx4GSZGbpl0PgJ0AcfAoboUg/IV8Lriihmuc8XHaHx+AKIfOtrdiaW+gZHUtA+ngUvSFIzKPXAwsqhMQQV8g4anF5kIleRxJipiMS6ns0lRisJdKF9kyLugZ4bkzbh+nb9W1/c6cQC6KueEf9BzRvGWThRXhVm1N5g4sOoZgsqo7HXmbU29/yEVQeatDc/xvlBvWk4aCbapwJDdvj6aI1NNwY/AjfKkCmFfN80BfFLsdBleWF++vgVdtZoaNmdNEy9UJmWk=
+  file: assembly/target/livy-server-0.4.0-SNAPSHOT.zip
+  on:
+    repo: jessecollier/livy
